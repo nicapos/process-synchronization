@@ -17,8 +17,9 @@ def print_instances(dungeon):
             if i + j < dungeon.num_instances:
                 tmp = dungeon.instances[i + j]
                 status_str = classes.InstanceStatus.ACTIVE.value if tmp.status == classes.InstanceStatus.ACTIVE else classes.InstanceStatus.EMPTY.value
-                print(f"Instance {tmp.id}: {status_str}\t", end="")
+                print(f"Instance {tmp.id}: {status_str}\t", end="")       
         print()
+    print("===================================")    
 
 def update_dungeon(dungeon, i):
     dungeon.tanks -= 1
@@ -77,6 +78,7 @@ def start_process(dungeon):
         thread.join()
 
 def print_summary(dungeon):
+    print()
     print("========= S U M M A R Y =========")
     total_served = 0
     for instance in dungeon.instances:
@@ -85,11 +87,11 @@ def print_summary(dungeon):
             f"Total Time Served: {instance.total_time_served}\n")
         total_served += instance.parties_served
 
-    print(f"\nTotal Parties Served: {total_served}\n")
+    print(f"\nTotal Parties Served: {total_served}\n\n")
     print("Remaining: ")
-    print("Tanks: {dungeon.tanks}")
-    print("Healers: {dungeon.healers}")
-    print("DPS: {dungeon.dps}")
+    print(f"Tanks: {dungeon.tanks}")
+    print(f"Healers: {dungeon.healers}")
+    print(f"DPS: {dungeon.dps}")
 
 def run_instance_args(dungeon, instance_id):
     return RunInstanceArgs(dungeon, instance_id)
