@@ -49,6 +49,10 @@ class LFG_Monitor:
         self.tail = 0
 ```
 
+The lock function takes a monitor object with a lock (monitor.lock), a condition variable (monitor.cond), and shared data. Within the critical section initiated by "with monitor.lock," the current thread index is captured, and the tail is incremented to signal that a new thread is entering. The loop "while thread_idx != monitor.head:" checks if the thread is next in line, and "monitor.cond.wait()" suspends the thread until notified by another thread to proceed.
+
+
+The unlock function releases the lock, increments the head to signal completion of the current thread's critical section, and notifies all waiting threads. This broadcast is essential for waking up waiting threads to check if they can now enter the critical section.
 ```python
 def lock(monitor):
     with monitor.lock:
