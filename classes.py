@@ -2,7 +2,8 @@ import time
 import random
 import threading
 from enum import Enum
-from globals import terminate_simulation
+# from globals import globals.terminate_simulation
+import globals
 
 class Role(Enum):
     TANK = "tank"
@@ -89,16 +90,16 @@ class Instance:
 
     @classmethod
     def update_instance_status(cls, instances, status_lock):
-        global terminate_simulation
-        while not terminate_simulation:
+        # global globals.terminate_simulation
+        while not globals.terminate_simulation:
             time.sleep(5)
 
             with status_lock:
                 # Check if all instances are inactive
                 all_instances_inactive = all(not instance.active for instance in instances)
 
-                if terminate_simulation or all_instances_inactive:
-                    terminate_simulation = True  # Set the termination flag
+                if globals.terminate_simulation or all_instances_inactive:
+                    globals.terminate_simulation = True  # Set the termination flag
                     break  # Exit the loop if termination flag is set or all instances are inactive
 
                 for instance in instances:
@@ -109,7 +110,7 @@ class Instance:
 
 
     def dungeon_clearing(self):
-        clear_time = random.uniform(self.t1, self.t2)
+        clear_time = random.randint(self.t1, self.t2)
         time.sleep(clear_time)
 
         with self.status_lock:

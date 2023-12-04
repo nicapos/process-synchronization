@@ -3,7 +3,7 @@ import threading
 import time
 from queue import Queue    
 import logging
-from globals import terminate_simulation
+import globals
 
 # For logging errors
 logging.basicConfig(level=logging.INFO)
@@ -11,14 +11,15 @@ logger = logging.getLogger(__name__)
 
 # Output the current stats of the instances
 def display_results(instances):
-    global terminate_simulation
-    while not terminate_simulation:
+    # global globals.terminate_simulation
+    while not globals.terminate_simulation:
+        print("[GLOBAL] display_results", globals.terminate_simulation)
         time.sleep(5)
 
         with classes.Instance.summary_lock:
             print("\nCurrent Status of Instances:")
             for instance in instances:
-                if terminate_simulation:
+                if globals.terminate_simulation:
                     break  # Exit the loop if termination flag is set
                 if instance.active:
                     print(f"Instance {instance.instance_id}: Active")
@@ -38,7 +39,7 @@ def display_results(instances):
         
 # process the instances
 def process_instances(n, t1, t2, tank_queue, healer_queue, dps_queue):
-    global terminate_simulation
+    # global globals.terminate_simulation
     # Create lock to synchronize instance process
     status_lock = threading.Lock()
     
@@ -88,7 +89,7 @@ def create_characters(t,h,d):
 
 # Start processing the input
 def process_input(user_input):
-    global terminate_simulation
+    # global globals.terminate_simulation
     inp_arr = user_input.split()
     
     n = int(inp_arr[0])
@@ -105,4 +106,4 @@ def process_input(user_input):
         # process_instance_fin(n,t1,t2,tq, hq, dq)
     else:
         logger.error("Process Terminated")
-        terminate_simulation = True
+        globals.terminate_simulation = True
