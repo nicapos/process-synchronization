@@ -65,6 +65,8 @@ def unlock(monitor):
         monitor.head += 1
         monitor.cond.notify_all()
 ```
+  - monitor.lock: A lock used to ensure mutual exclusion when accessing shared resources or critical sections. It is employed in the with monitor.lock statement to create a critical section, providing only one thread can execute the enclosed code simultaneously.
+  - monitor.cond: A condition variable associated with the lock. It is used with monitor.lock to coordinate communication between threads. The monitor.cond.wait() inside the lock function releases the lock and waits for a notification, effectively suspending the thread until another thread notifies it. The monitor.cond.notify_all() inside the unlock function notifies all waiting threads, allowing them to proceed.
 
 ## Usage
 To start the simulation program, run:
