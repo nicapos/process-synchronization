@@ -5,6 +5,7 @@ from queue import Queue
 import logging
 from globals import terminate_simulation
 
+# For logging errors
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -29,11 +30,14 @@ def display_results(instances):
                 print(f"Instance {instance.instance_id}: {instance.total_parties_served} parties served")
 
             print("\nTotal Time Served Across All Instances:")
-            print(f"{classes.Instance.total_time_served} seconds")
+            total = 0
+            for instance in instances:
+                total += instance.total_time_served
+            print(f"{total} seconds")
 
         
-# Create n instances and put them in separate threads
-def create_instances(n, t1, t2, tank_queue, healer_queue, dps_queue):
+# process the instances
+def process_instances(n, t1, t2, tank_queue, healer_queue, dps_queue):
     global terminate_simulation
     # Create lock to synchronize instance process
     status_lock = threading.Lock()
@@ -69,13 +73,13 @@ def create_characters(t,h,d):
     
     if t!=0 or h!=0 or d!=0:
         for i in range(t):
-            tank = classes.Character(role=classes.Role.TANK)
+            tank = classes.Character(role=classes.Role.TANK, name=i+1)
             tank_queue.put(tank)
-        for i in range(h):
-            healer = classes.Character(role=classes.Role.HEALER)
+        for j in range(h):
+            healer = classes.Character(role=classes.Role.HEALER, name=j+1)
             healer_queue.put(healer)
-        for i in range(d):
-            dps = classes.Character(role=classes.Role.DPS)
+        for k in range(d):
+            dps = classes.Character(role=classes.Role.DPS, name=k+1)
             dps_queue.put(dps)  
     else:
         logger.error("Cannot create a full party. Tank in queue = {t}, Healer in queue = {h}, DPS in queue = {d}")        
@@ -97,7 +101,8 @@ def process_input(user_input):
     tq, hq, dq = create_characters(t, h, d)
     
     if not tq.empty() or not hq.empty() or not dq.empty():
-        create_instances(n, t1, t2, tq, hq, dq)
+        process_instances(n, t1, t2, tq, hq, dq)
+        # process_instance_fin(n,t1,t2,tq, hq, dq)
     else:
         logger.error("Process Terminated")
         terminate_simulation = True

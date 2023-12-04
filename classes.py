@@ -10,13 +10,18 @@ class Role(Enum):
     DPS = "dps"
 
 class Character:
-    def __init__(self, role) -> None:
+    def __init__(self, role, name) -> None:
         self.__role = role
+        self.__name = name
 
     @property
     def role(self) -> Role:
         return self.__role
-
+    
+    @property
+    def name(self) -> str:
+        return f"tank {self.__name}"
+    
 class Party:
     party_counter = 0
 
@@ -61,7 +66,6 @@ class InstanceStatus(Enum):
     
 class Instance:
     total_parties_served = 0
-    total_time_served = 0
     summary_lock = threading.Lock()
 
     def __init__(self, instance_id, t1, t2, tank_queue, healer_queue, dps_queue, status_lock):
@@ -76,12 +80,12 @@ class Instance:
         self.status_lock = status_lock
         self.party = None
         self.active = False
+        self.total_time_served = 0
 
-    @classmethod
-    def update_summary_statistics(cls, clear_time):
-        with cls.summary_lock:
-            cls.total_parties_served += 1
-            cls.total_time_served += clear_time
+    def update_summary_statistics(self, clear_time):
+        with self.summary_lock:
+            self.total_parties_served += 1
+            self.total_time_served += clear_time
 
     @classmethod
     def update_instance_status(cls, instances, status_lock):
@@ -114,7 +118,9 @@ class Instance:
             self.party = None
             print(f"Instance {self.instance_id}: Party completed - {completed_party}")
 
-            Instance.update_summary_statistics(clear_time)
+            self.total_parties_served += 1
+            self.total_time_served += clear_time
+            print(self.total_time_served)
 
     def start_instance(self, tank_queue, healer_queue, dps_queue):
         while not self.active:
@@ -124,6 +130,7 @@ class Instance:
             if tank and healer:
                 dps = [self.dps_queue.get() for _ in range(3)]
 
+                # Party Creation
                 party = Party()
                 party.add_member(tank)
                 party.add_member(healer)
