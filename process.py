@@ -62,12 +62,12 @@ def start_instance(dungeon, instance_id):
         
         # If not enough members to create a party
         if dungeon.tanks < 1 or dungeon.healers < 1 or dungeon.dps < 3:
-            classes.unlock(dungeon.lfg_monitor)
+            classes.release(dungeon.lfg_monitor)
             break
         else:
             update_dungeon(dungeon, i)
             print_instances(dungeon)
-            classes.unlock(dungeon.lfg_monitor)
+            classes.release(dungeon.lfg_monitor)
 
             # Simulate dungeon clear
             clear_time = dungeon_clear(dungeon)
@@ -79,16 +79,13 @@ def start_instance(dungeon, instance_id):
 
 def start_process(dungeon):
     random.seed(time.time())
-    threads = []
 
     # Create and start instance threads
-    for i in range(dungeon.num_instances):
-        thread = threading.Thread(target=start_instance, args=(dungeon, i))
-        threads.append(thread)
-        thread.start()
+    instance_threads = [threading.Thread(target=start_instance, args=(dungeon, i)) for i in range(dungeon.num_instances)]
+    [thread.start() for thread in instance_threads]
 
     # Terminate threads
-    for thread in threads:
+    for thread in instance_threads:
         thread.join()
         
 def process_input(user_input):
