@@ -3,6 +3,22 @@ import time
 import random
 import classes
 
+def print_summary(dungeon):
+    print()
+    print("========= S U M M A R Y =========")
+    total_served = 0
+    for instance in dungeon.instances:
+        print(f"[INSTANCE {instance.id}]:\n"
+            f"Parties Served: \t{instance.parties_served}\n"
+            f"Total Time Served: \t{instance.total_time_served}\n")
+        total_served += instance.parties_served
+
+    print(f"[TOTAL PARTIES SERVED]: {total_served}")
+    print("[REMAINING]: ")
+    print(f"Tanks: \t\t{dungeon.tanks}")
+    print(f"Healers: \t{dungeon.healers}")
+    print(f"DPS: \t\t{dungeon.dps}")
+
 def print_instances(dungeon):
     # print remaining tanks
     print("Remaining Tank instances: " + str(dungeon.tanks))
@@ -19,7 +35,7 @@ def print_instances(dungeon):
                 status_str = classes.InstanceStatus.ACTIVE.value if tmp.status == classes.InstanceStatus.ACTIVE else classes.InstanceStatus.EMPTY.value
                 print(f"Instance {tmp.id}: {status_str}\t", end="")       
         print()
-    print("===================================")    
+    print("=================================")    
 
 def update_dungeon(dungeon, i):
     dungeon.tanks -= 1
@@ -35,9 +51,8 @@ def update_dungeon(dungeon, i):
 def dungeon_clear(dungeon):
     return dungeon.t1 + random.randint(0, dungeon.t2 - dungeon.t1 + 1)
 
-def start_instance(args):
-    dungeon = args.dungeon
-    i = dungeon.instances[args.id]
+def start_instance(dungeon, instance_id):
+    i = dungeon.instances[instance_id]
 
     while True:
         # Lock dungeon
@@ -68,38 +83,13 @@ def start_process(dungeon):
 
     # Create and start instance threads
     for i in range(dungeon.num_instances):
-        args = run_instance_args(dungeon, i)
-        thread = threading.Thread(target=start_instance, args=(args,))
+        thread = threading.Thread(target=start_instance, args=(dungeon, i))
         threads.append(thread)
         thread.start()
 
     # Terminate threads
     for thread in threads:
         thread.join()
-
-def print_summary(dungeon):
-    print()
-    print("========= S U M M A R Y =========")
-    total_served = 0
-    for instance in dungeon.instances:
-        print(f"Instance {instance.id}:\n"
-            f"Parties Served: {instance.parties_served}\n"
-            f"Total Time Served: {instance.total_time_served}\n")
-        total_served += instance.parties_served
-
-    print(f"\nTotal Parties Served: {total_served}\n\n")
-    print("Remaining: ")
-    print(f"Tanks: {dungeon.tanks}")
-    print(f"Healers: {dungeon.healers}")
-    print(f"DPS: {dungeon.dps}")
-
-def run_instance_args(dungeon, instance_id):
-    return RunInstanceArgs(dungeon, instance_id)
-
-class RunInstanceArgs:
-    def __init__(self, dungeon, instance_id):
-        self.dungeon = dungeon
-        self.id = instance_id
         
 def process_input(user_input):
     global terminate_simulation
