@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 def display_results(instances):
     # global globals.terminate_simulation
     while not globals.terminate_simulation:
-        print("[GLOBAL] display_results", globals.terminate_simulation)
         time.sleep(5)
 
         with classes.Instance.summary_lock:
