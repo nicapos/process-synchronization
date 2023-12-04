@@ -38,7 +38,7 @@ At the end of the execution there should be a summary of how many parties an ins
 
 ## Simulation
 
-The **synchronization technique** used in the program is the monitor pattern. The specific implementation details can be found in the [`classes.py`](./classes.py) file, specifically in lines 4 to 21.
+The **synchronization technique** used in the program is the FIFO(First-in-First-out) Synchronization Process, represented by the LFG_Monitor (Looking For Group Monitor) class. The specific implementation details can be found in the [`classes.py`](./classes.py) file, specifically in lines 4 to 21.
 
 ```python
 class LFG_Monitor:
@@ -49,10 +49,9 @@ class LFG_Monitor:
         self.tail = 0
 ```
 
-The lock function takes a monitor object with a lock (monitor.lock), a condition variable (monitor.cond), and shared data. Within the critical section initiated by "with monitor.lock," the current thread index is captured, and the tail is incremented to signal that a new thread is entering. The loop "while thread_idx != monitor.head:" checks if the thread is next in line, and "monitor.cond.wait()" suspends the thread until notified by another thread to proceed.
+The **lock function** takes a monitor object with a lock (monitor.lock), a condition variable (monitor.cond), and shared data. Within the critical section initiated by "with monitor.lock," the current thread index is captured, and the tail is incremented to signal that a new thread is entering. The loop "while thread_idx != monitor.head:" checks if the thread is next in line, and "monitor.cond.wait()" suspends the thread until notified by another thread to proceed.
 
-
-The unlock function releases the lock, increments the head to signal completion of the current thread's critical section, and notifies all waiting threads. This broadcast is essential for waking up waiting threads to check if they can now enter the critical section.
+The **unlock function** releases the lock, increments the head to signal completion of the current thread's critical section, and notifies all waiting threads. This broadcast is essential for waking up waiting threads to check if they can now enter the critical section.
 ```python
 def lock(monitor):
     with monitor.lock:
