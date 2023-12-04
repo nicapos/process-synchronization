@@ -8,6 +8,7 @@ from globals import terminate_simulation
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Output the current stats of the instances
 def display_results(instances):
     global terminate_simulation
     while not terminate_simulation:
@@ -60,11 +61,6 @@ def create_instances(n, t1, t2, tank_queue, healer_queue, dps_queue):
 
     logger.info("Terminating create_instances function.")
 
-    
-# Start the queueing process 
-def start_queue(n, t1, t2, tank_queue, healer_queue, dps_queue):
-    create_instances(n, t1, t2, tank_queue, healer_queue, dps_queue)
-
 # Create characters based on the number of tanks, healers, and dps and put them in separate queues
 def create_characters(t,h,d):
     tank_queue = Queue()
@@ -101,7 +97,7 @@ def process_input(user_input):
     tq, hq, dq = create_characters(t, h, d)
     
     if not tq.empty() or not hq.empty() or not dq.empty():
-        start_queue(n, t1, t2, tq, hq, dq)
+        create_instances(n, t1, t2, tq, hq, dq)
     else:
         logger.error("Process Terminated")
         terminate_simulation = True
