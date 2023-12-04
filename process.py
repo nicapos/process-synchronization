@@ -16,7 +16,8 @@ def print_instances(dungeon):
         for j in range(4):
             if i + j < dungeon.num_instances:
                 tmp = dungeon.instances[i + j]
-                print(f"Instance {tmp.id}: { 'ACTIVE' if tmp.status else 'EMPTY' }\t")
+                status_str = classes.InstanceStatus.ACTIVE.value if tmp.status == classes.InstanceStatus.ACTIVE else classes.InstanceStatus.EMPTY.value
+                print(f"Instance {tmp.id}: {status_str}\t", end="")
         print()
 
 def update_dungeon(dungeon, i):
@@ -33,7 +34,7 @@ def update_dungeon(dungeon, i):
 def dungeon_clear(dungeon):
     return dungeon.t1 + random.randint(0, dungeon.t2 - dungeon.t1 + 1)
 
-def run_instance(args):
+def start_instance(args):
     dungeon = args.dungeon
     i = dungeon.instances[args.id]
 
@@ -67,7 +68,7 @@ def start_process(dungeon):
     # Create and start instance threads
     for i in range(dungeon.num_instances):
         args = run_instance_args(dungeon, i)
-        thread = threading.Thread(target=run_instance, args=(args,))
+        thread = threading.Thread(target=start_instance, args=(args,))
         threads.append(thread)
         thread.start()
 
@@ -78,15 +79,17 @@ def start_process(dungeon):
 def print_summary(dungeon):
     print("========= S U M M A R Y =========")
     total_served = 0
-    for i in range(dungeon.num_instances):
-        instance = dungeon.instances[i]
+    for instance in dungeon.instances:
         print(f"Instance {instance.id}:\n"
-              f"Parties Served: {instance.parties_served}\n"
-              f"Total Time Served: {instance.total_time_served}\n")
+            f"Parties Served: {instance.parties_served}\n"
+            f"Total Time Served: {instance.total_time_served}\n")
         total_served += instance.parties_served
 
     print(f"\nTotal Parties Served: {total_served}\n")
-    print(f"\Remaining:\n\tTanks: {dungeon.tanks}\n\tHealers: {dungeon.healers}\n\tDPS: {dungeon.dps}\n")
+    print("Remaining: ")
+    print("Tanks: {dungeon.tanks}")
+    print("Healers: {dungeon.healers}")
+    print("DPS: {dungeon.dps}")
 
 def run_instance_args(dungeon, instance_id):
     return RunInstanceArgs(dungeon, instance_id)

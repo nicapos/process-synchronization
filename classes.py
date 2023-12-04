@@ -1,6 +1,5 @@
 from enum import Enum
 import threading
-import synch
 
 class LFG_Monitor:
     def __init__(self):
@@ -31,6 +30,7 @@ class Instance:
         self.tanks_served = 0
         self.healers_served = 0
         self.dps_served = 0
+        
         self.total_time_served = 0
         self.parties_served = 0
         self.status = InstanceStatus.EMPTY  # Use the InstanceStatus enumeration
@@ -44,4 +44,4 @@ class Dungeon:
         self.t1 = t1
         self.t2 = t2
         self.instances = [Instance(i) for i in range(num_instances)]
-        self.lfg_monitor = synch.LFG_Monitor()
+        self.lfg_monitor = LFG_Monitor()
