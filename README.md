@@ -26,7 +26,7 @@ The program accepts three inputs from the user.
 - t1 - minimum time before an instance is finished
 - t2 - maximum time before an instance is finished
 
-Output
+### Output
 
 The output of the program should show the following:
 
@@ -35,3 +35,36 @@ The output of the program should show the following:
   - If the instance is empty, the status should say "empty"
 
 At the end of the execution there should be a summary of how many parties an instance have served and total time served.
+
+## Simulation
+
+The **synchronization technique** used in the program is the monitor pattern. The specific implementation details can be found in the [`classes.py`](./classes.py) file, specifically in lines 4 to 21.
+
+```python
+class LFG_Monitor:
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.cond = threading.Condition(self.lock)
+        self.head = 0
+        self.tail = 0
+```
+
+```python
+def lock(monitor):
+    with monitor.lock:
+        thread_idx = monitor.tail
+        monitor.tail += 1
+        while thread_idx != monitor.head:
+            monitor.cond.wait()
+
+def unlock(monitor):
+    with monitor.lock:
+        monitor.head += 1
+        monitor.cond.notify_all()
+```
+
+## Usage
+To start the simulation program, run:
+```bash
+python main.py
+```
