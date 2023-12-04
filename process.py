@@ -1,92 +1,101 @@
-import classes
 import threading
 import time
-from queue import Queue    
-import logging
-from globals import terminate_simulation
+import random
+import classes
 
-# For logging errors
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+def print_instances(dungeon):
+    # print remaining tanks
+    print("Remaining Tank instances: " + str(dungeon.tanks))
+    # print remaining healers
+    print("Remaining Healer instances: " + str(dungeon.healers))
+    # print remaining dps
+    print("Remaining DPS instances: " + str(dungeon.dps))
+    print()
 
-# Output the current stats of the instances
-def display_results(instances):
-    global terminate_simulation
-    while not terminate_simulation:
-        time.sleep(5)
+    for i in range(0, dungeon.num_instances, 4):
+        for j in range(4):
+            if i + j < dungeon.num_instances:
+                tmp = dungeon.instances[i + j]
+                print(f"Instance {tmp.id}: { 'ACTIVE' if tmp.status else 'EMPTY' }\t")
+        print()
 
-        with classes.Instance.summary_lock:
-            print("\nCurrent Status of Instances:")
-            for instance in instances:
-                if terminate_simulation:
-                    break  # Exit the loop if termination flag is set
-                if instance.active:
-                    print(f"Instance {instance.instance_id}: Active")
-                else:
-                    print(f"Instance {instance.instance_id}: Empty")
-
-            print("\nSummary of Parties Served:")
-            for instance in instances:
-                print(f"Instance {instance.instance_id}: {instance.total_parties_served} parties served")
-
-            print("\nTotal Time Served Across All Instances:")
-            total = 0
-            for instance in instances:
-                total += instance.total_time_served
-            print(f"{total} seconds")
-
-        
-# process the instances
-def process_instances(n, t1, t2, tank_queue, healer_queue, dps_queue):
-    global terminate_simulation
-    # Create lock to synchronize instance process
-    status_lock = threading.Lock()
+def update_dungeon(dungeon, i):
+    dungeon.tanks -= 1
+    i.tanks_served += 1
     
-    # Create n instances
-    instances = [classes.Instance(instance_id=i, t1=t1, t2=t2,
-                           tank_queue=tank_queue, healer_queue=healer_queue, dps_queue=dps_queue,
-                           status_lock=status_lock) for i in range(n)]
+    dungeon.healers -= 1
+    i.healers_served += 1
+    
+    dungeon.dps -= 3
+    i.dps_served += 3
+    i.status = classes.InstanceStatus.ACTIVE
 
-    instance_threads = [threading.Thread(target=instance.start_instance, args=(tank_queue, healer_queue, dps_queue)) for instance in instances]
-    update_status_thread = threading.Thread(target=classes.Instance.update_instance_status, args=(instances, status_lock))
-    display_results_thread = threading.Thread(target=display_results, args=(instances,))
+def dungeon_clear(dungeon):
+    return dungeon.t1 + random.randint(0, dungeon.t2 - dungeon.t1 + 1)
 
-    for thread in instance_threads:
+def run_instance(args):
+    dungeon = args.dungeon
+    i = dungeon.instances[args.id]
+
+    while True:
+        # Lock dungeon
+        classes.lock(dungeon.lfg_monitor)
+        # Print current instances
+        print_instances(dungeon)
+        
+        # If not enough members to create a party
+        if dungeon.tanks < 1 or dungeon.healers < 1 or dungeon.dps < 3:
+            classes.unlock(dungeon.lfg_monitor)
+            break
+        else:
+            update_dungeon(dungeon, i)
+            print_instances(dungeon)
+            classes.unlock(dungeon.lfg_monitor)
+
+            # Simulate dungeon clear
+            clear_time = dungeon_clear(dungeon)
+            time.sleep(clear_time)
+            
+            i.total_time_served += clear_time
+            i.parties_served += 1
+            i.status = classes.InstanceStatus.EMPTY
+
+def start_process(dungeon):
+    random.seed(time.time())
+    threads = []
+
+    # Create and start instance threads
+    for i in range(dungeon.num_instances):
+        args = run_instance_args(dungeon, i)
+        thread = threading.Thread(target=run_instance, args=(args,))
+        threads.append(thread)
         thread.start()
 
-    update_status_thread.start()
-    display_results_thread.start()
-
-    for thread in instance_threads:
+    # Terminate threads
+    for thread in threads:
         thread.join()
 
-    update_status_thread.join()
-    display_results_thread.join()
+def print_summary(dungeon):
+    print("========= S U M M A R Y =========")
+    total_served = 0
+    for i in range(dungeon.num_instances):
+        instance = dungeon.instances[i]
+        print(f"Instance {instance.id}:\n"
+              f"Parties Served: {instance.parties_served}\n"
+              f"Total Time Served: {instance.total_time_served}\n")
+        total_served += instance.parties_served
 
-    logger.info("Terminating create_instances function.")
+    print(f"\nTotal Parties Served: {total_served}\n")
+    print(f"\Remaining:\n\tTanks: {dungeon.tanks}\n\tHealers: {dungeon.healers}\n\tDPS: {dungeon.dps}\n")
 
-# Create characters based on the number of tanks, healers, and dps and put them in separate queues
-def create_characters(t,h,d):
-    tank_queue = Queue()
-    healer_queue = Queue()
-    dps_queue = Queue()
-    
-    if t!=0 or h!=0 or d!=0:
-        for i in range(t):
-            tank = classes.Character(role=classes.Role.TANK, name=i+1)
-            tank_queue.put(tank)
-        for j in range(h):
-            healer = classes.Character(role=classes.Role.HEALER, name=j+1)
-            healer_queue.put(healer)
-        for k in range(d):
-            dps = classes.Character(role=classes.Role.DPS, name=k+1)
-            dps_queue.put(dps)  
-    else:
-        logger.error("Cannot create a full party. Tank in queue = {t}, Healer in queue = {h}, DPS in queue = {d}")        
-    
-    return tank_queue, healer_queue, dps_queue  
+def run_instance_args(dungeon, instance_id):
+    return RunInstanceArgs(dungeon, instance_id)
 
-# Start processing the input
+class RunInstanceArgs:
+    def __init__(self, dungeon, instance_id):
+        self.dungeon = dungeon
+        self.id = instance_id
+        
 def process_input(user_input):
     global terminate_simulation
     inp_arr = user_input.split()
@@ -98,11 +107,6 @@ def process_input(user_input):
     t1 = int(inp_arr[4])
     t2 = int(inp_arr[5])
     
-    tq, hq, dq = create_characters(t, h, d)
-    
-    if not tq.empty() or not hq.empty() or not dq.empty():
-        process_instances(n, t1, t2, tq, hq, dq)
-        # process_instance_fin(n,t1,t2,tq, hq, dq)
-    else:
-        logger.error("Process Terminated")
-        terminate_simulation = True
+    dungeon = classes.Dungeon(n, t, h, d, t1, t2)     
+    start_process(dungeon)
+    print_summary(dungeon)
