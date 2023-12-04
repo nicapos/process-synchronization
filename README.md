@@ -30,7 +30,7 @@ Output
 
 The output of the program should show the following:
 
-- Current status of all available instances
+  - Current status of all available instances
   - If there is a party in the instance, the status should say "active"
   - If the instance is empty, the status should say "empty"
 

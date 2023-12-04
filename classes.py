@@ -1,6 +1,8 @@
 import time
 import random
+import threading
 from enum import Enum
+from globals import terminate_simulation
 
 class Role(Enum):
     TANK = "tank"
@@ -53,28 +55,68 @@ class Party:
     def get_average_wait_time(self) -> float:
         return time.time() - self.__start_time
                 
+class InstanceStatus(Enum):
+    EMPTY = "empty"
+    ACTIVE = "active"                
+    
 class Instance:
-    def __init__(self, instance_id, max_party_size, t1, t2, tank_queue, healer_queue, dps_queue):
+    total_parties_served = 0
+    total_time_served = 0
+    summary_lock = threading.Lock()
+
+    def __init__(self, instance_id, t1, t2, tank_queue, healer_queue, dps_queue, status_lock):
         self.instance_id = instance_id
-        self.max_party_size = max_party_size
-        
         self.t1 = t1
         self.t2 = t2
+
         self.tank_queue = tank_queue
         self.healer_queue = healer_queue
         self.dps_queue = dps_queue
-        
+
+        self.status_lock = status_lock
         self.party = None
         self.active = False
+
+    @classmethod
+    def update_summary_statistics(cls, clear_time):
+        with cls.summary_lock:
+            cls.total_parties_served += 1
+            cls.total_time_served += clear_time
+
+    @classmethod
+    def update_instance_status(cls, instances, status_lock):
+        global terminate_simulation
+        while not terminate_simulation:
+            time.sleep(5)
+
+            with status_lock:
+                # Check if all instances are inactive
+                all_instances_inactive = all(not instance.active for instance in instances)
+
+                if terminate_simulation or all_instances_inactive:
+                    terminate_simulation = True  # Set the termination flag
+                    break  # Exit the loop if termination flag is set or all instances are inactive
+
+                for instance in instances:
+                    if instance.active:
+                        print(f"Instance {instance.instance_id}: Active")
+                    else:
+                        print(f"Instance {instance.instance_id}: Empty")
+
 
     def dungeon_clearing(self):
         clear_time = random.uniform(self.t1, self.t2)
         time.sleep(clear_time)
 
-        self.active = False
-        print(f"Instance {self.instance_id}: Party completed - {self.party}")
+        with self.status_lock:
+            self.active = False
+            completed_party = self.party
+            self.party = None
+            print(f"Instance {self.instance_id}: Party completed - {completed_party}")
 
-    def start_instance(self):
+            Instance.update_summary_statistics(clear_time)
+
+    def start_instance(self, tank_queue, healer_queue, dps_queue):
         while not self.active:
             tank = self.tank_queue.get()
             healer = self.healer_queue.get()
@@ -82,19 +124,15 @@ class Instance:
             if tank and healer:
                 dps = [self.dps_queue.get() for _ in range(3)]
 
-                # Create Party
                 party = Party()
                 party.add_member(tank)
                 party.add_member(healer)
                 for d in dps:
                     party.add_member(d)
 
-                # Activate Instance
-                self.active = True
-                self.party = party
+                with self.status_lock:
+                    self.active = True
+                    self.party = party
+                    print(f"Instance {self.instance_id}: Party started - {self.party}")
 
-                print(f"Instance {self.instance_id}: Party started - {self.party}")
-                
-                # Dungeon Clearing Simulation
                 self.dungeon_clearing()
-              
