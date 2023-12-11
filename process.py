@@ -3,6 +3,7 @@ import time
 import random
 import classes
 
+# Prints out the final summary at the end of the process execution
 def print_summary(dungeon):
     print()
     print("========= S U M M A R Y =========")
@@ -19,6 +20,7 @@ def print_summary(dungeon):
     print(f"Healers: \t{dungeon.healers}")
     print(f"DPS: \t\t{dungeon.dps}")
 
+# Printing of updated instances
 def print_instances(dungeon):
     # print remaining tanks
     print("Remaining Tank instances: " + str(dungeon.tanks))
@@ -37,6 +39,7 @@ def print_instances(dungeon):
         print()
     print("=================================")    
 
+# Process of updating the dungeon (emptying the dungeon out and updating number of characters served)
 def update_dungeon(dungeon, i):
     dungeon.tanks -= 1
     i.tanks_served += 1
@@ -48,9 +51,11 @@ def update_dungeon(dungeon, i):
     i.dps_served += 3
     i.status = classes.InstanceStatus.ACTIVE
 
+# Process of simulating the dungeon clearing task
 def dungeon_clear(dungeon):
     return dungeon.t1 + random.randint(0, dungeon.t2 - dungeon.t1 + 1)
 
+# Start the process of an instance
 def start_instance(dungeon, instance_id):
     i = dungeon.instances[instance_id]
 
@@ -77,6 +82,7 @@ def start_instance(dungeon, instance_id):
             i.parties_served += 1
             i.status = classes.InstanceStatus.EMPTY
 
+# Initializing the processes / instances and threads
 def start_process(dungeon):
     random.seed(time.time())
 
@@ -87,7 +93,8 @@ def start_process(dungeon):
     # Terminate threads
     for thread in instance_threads:
         thread.join()
-        
+
+# Processing and parsing of input to be used in the proceeding processes       
 def process_input(user_input):
     global terminate_simulation
     inp_arr = user_input.split()
